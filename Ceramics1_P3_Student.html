@@ -433,6 +433,12 @@ function renderLogin(app){
 }
 
 async function startPreview(){
+  const code=prompt("Enter teacher code:");
+  if(code===null)return;
+  if(code!=="2424"){alert("Incorrect code.");return;}
+  _doPreview();
+}
+async function _doPreview(){
   previewMode=true;student="__PREVIEW__";pendingStudent=null;pinEntry="";
   document.getElementById("app").innerHTML=`<div style="text-align:center;padding:3rem;color:#7F77DD;font-size:14px">Loading preview…</div>`;
   await loadLocks();
