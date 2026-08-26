@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Art Tech (6th Hour) — Teacher Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f4fb;color:#2C2C2A;min-height:100vh}
+.app{max-width:1100px;margin:0 auto;padding:1.5rem 1rem}
+h1{font-size:22px;font-weight:700;color:#26215C;margin-bottom:4px}
+.sub{font-size:14px;color:#5F5E5A;margin-bottom:1.5rem}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:1.5rem}
+select,button{font-family:Arial,sans-serif}
+select{padding:8px 12px;border:1px solid #B4B2A9;border-radius:8px;background:#fff;color:#2C2C2A;font-size:13px}
+.ctrl-btn{padding:8px 14px;border-radius:8px;border:1px solid #B4B2A9;background:#fff;font-size:13px;cursor:pointer;color:#2C2C2A;font-weight:700}
+.ctrl-btn:hover{background:#EEEDFE;color:#3C3489}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.5rem}
+.stat{background:#fff;border-radius:10px;padding:1rem;border:1px solid #D3D1C7}
+.stat-lbl{font-size:12px;color:#5F5E5A;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em}
+.stat-val{font-size:22px;font-weight:700;color:#2C2C2A}
+.tbl-wrap{overflow-x:auto;border:1px solid #D3D1C7;border-radius:12px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px}
+thead th{padding:10px 12px;text-align:left;background:#F1EFE8;color:#5F5E5A;font-weight:700;border-bottom:1px solid #D3D1C7;white-space:nowrap;font-size:12px}
+tbody td{padding:10px 12px;border-bottom:1px solid #EEEDFE;color:#2C2C2A;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFAF8}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:26px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;padding:0 6px}
+.chip-hi{background:#EAF3DE;color:#27500A}
+.chip-mid{background:#FAEEDA;color:#633806}
+.chip-lo{background:#FCEBEB;color:#791F1F}
+.chip-none{background:#F1EFE8;color:#888780;cursor:default}
+.badge{display:inline-block;font-size:11px;padding:3px 8px;border-radius:99px;font-weight:700}
+.badge-done{background:#EAF3DE;color:#27500A}
+.badge-pend{background:#F1EFE8;color:#888780}
+.detail-box{margin-top:1.5rem;background:#fff;border:1px solid #D3D1C7;border-radius:12px;padding:1.5rem}
+.detail-box h3{font-size:16px;font-weight:700;color:#26215C;margin-bottom:1rem}
+.score-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem}
+.score-item{font-size:12px;display:flex;align-items:center;gap:6px}
+.refl-item{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #EEEDFE}
+.refl-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.refl-q{font-size:12px;color:#5F5E5A;margin-bottom:3px;font-weight:700}
+.refl-a{font-size:13px;color:#2C2C2A;line-height:1.6;background:#F5F4FB;padding:8px 10px;border-radius:6px}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:1rem}
+.photo-item{border-radius:8px;overflow:hidden;border:1px solid #D3D1C7;background:#F1EFE8;cursor:pointer;transition:transform 0.15s}
+.photo-item:hover{transform:scale(1.02)}
+.photo-item img{width:100%;height:140px;object-fit:cover;display:block}
+.photo-label{font-size:11px;color:#5F5E5A;padding:4px 6px;background:#fff;border-top:1px solid #D3D1C7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.no-photos{font-size:13px;color:#888780;font-style:italic;margin-top:8px}
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.lightbox.on{display:flex}
+.lightbox img{max-width:90vw;max-height:80vh;border-radius:8px;object-fit:contain}
+.lightbox-close{position:absolute;top:16px;right:20px;color:#fff;font-size:28px;cursor:pointer;background:none;border:none;font-weight:700}
+.lightbox-label{color:#fff;font-size:14px}
+.close-btn{float:right;padding:4px 10px;border:1px solid #D3D1C7;border-radius:6px;background:transparent;cursor:pointer;font-size:12px;color:#5F5E5A;font-family:Arial,sans-serif}
+.close-btn:hover{background:#FCEBEB;color:#791F1F}
+.loading{text-align:center;padding:2rem;color:#7F77DD;font-size:14px}
+.sec-title{font-size:12px;font-weight:700;color:#5F5E5A;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+/* lock panel */
+.lock-panel{background:#fff;border:1px solid #D3D1C7;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem}
+.lock-panel-title{font-size:15px;font-weight:700;color:#26215C;margin-bottom:4px}
+.lock-panel-sub{font-size:13px;color:#5F5E5A;margin-bottom:1rem}
+.lock-grid{display:flex;flex-wrap:wrap;gap:8px}
+.lock-btn{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #D3D1C7;background:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.18s;font-family:Arial,sans-serif}
+.lock-btn.unlocked{background:#EAF3DE;border-color:#639922;color:#27500A}
+.lock-btn.locked{background:#FCEBEB;border-color:#E24B4A;color:#791F1F}
+.lock-btn .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.lock-btn.unlocked .dot{background:#27500A}
+.lock-btn.locked .dot{background:#E24B4A}
+.lock-status-bar{margin-top:10px;font-size:12px;color:#5F5E5A;display:flex;align-items:center;gap:6px}
+.lock-saving{color:#7F77DD;font-weight:700}
+</style>
+</head>
+<body>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lb-img" src="" alt="">
+  <div class="lightbox-label" id="lb-label"></div>
+</div>
+<div class="app">
+  <h1>📊 Art Tech (6th Hour) — Teacher Dashboard</h1>
+  <p class="sub">John Glenn High School &nbsp;|&nbsp; Graphic Design Course</p>
+  <div class="controls">
+    <select id="wk-filter" onchange="filter()">
+      <option value="all">All weeks</option>
+      <option value="0">Week 0 — Procreate Tool Tour</option>
+      <option value="1">Week 1 — Procreate Basics</option>
+      <option value="2">Week 2 — Color Theory</option>
+      <option value="3">Week 3 — Font Research Worksheet</option>
+      <option value="4">Week 4 — Typography Basics</option>
+      <option value="5">Week 5 — Layout & Composition</option>
+      <option value="6">Week 6 — Digital Illustration</option>
+      <option value="7">Week 7 — Branding & Logo</option>
+      <option value="8">Week 8 — Package Design</option>
+      <option value="9">Week 9 — Business Card Design</option>
+      <option value="10">Week 10 — Face Swap</option>
+      <option value="11">Week 11 — Digital Collage</option>
+      <option value="12">Week 12 — Interior Design</option>
+    </select>
+    <select id="st-filter" onchange="filter()">
+      <option value="all">All students</option>
+      <option value="done">Submitted only</option>
+      <option value="pend">Not yet submitted</option>
+    </select>
+    <button class="ctrl-btn" onclick="loadAll()">↻ Refresh</button>
+    <span style="font-size:12px;color:#7F77DD" id="load-status"></span>
+  </div>
+  <div class="lock-panel">
+    <div class="lock-panel-title">🔒 Week Access Control</div>
+    <div class="lock-panel-sub">Toggle each week open (green) or locked (red) for students. Changes apply instantly.</div>
+    <div class="lock-grid" id="lock-grid"></div>
+    <div class="lock-status-bar"><span id="lock-status"></span></div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="tbl-wrap"><table id="main-tbl"><thead></thead><tbody><tr><td colspan="12" class="loading">Loading student submissions…</td></tr></tbody></table></div>
+  <div id="detail-area"></div>
+</div>
+<script>
+const STUDENTS=["Abdul-Wahab, Muhaimen", "Arnold, William", "Barksdale, Nevaeh", "Blaylock, Tamira", "Bowling, Matthew", "Carter, Brandon", "Cervantes, Liam", "Clements, Cam'ron", "Clements, DeVaughn", "Connelly, Payton", "Connors, Blake", "Edwards, K'yonna", "Espinal, Freddy", "Ghoston, Jayden", "Guerrero, Solangue", "Hughbanks, Isaiah", "Jasmund, Wyatt", "Jordan, Ellyott", "Lomax, Brian", "Mays, McKenzie", "Minfield, Brian", "Ngom, Soulaymane", "O'Connor, William", "Roberson, Rihanna", "Rolon, Iyana", "Sanchez Guerrero, Pedro", "Schaefer, Alexis", "Shufford, Renardo", "Simmerer, Anthony", "Simmerer, Ryan", "Smitt, Isabella", "Watkins, J'Laraunt", "Wells, Dewayne"];
+const PINS={"Abdul-Wahab, Muhaimen": "5853", "Arnold, William": "1694", "Barksdale, Nevaeh": "2108", "Blaylock, Tamira": "2599", "Bowling, Matthew": "4887", "Carter, Brandon": "1274", "Cervantes, Liam": "4756", "Clements, Cam'ron": "4793", "Clements, DeVaughn": "1069", "Connelly, Payton": "6137", "Connors, Blake": "7551", "Edwards, K'yonna": "7720", "Espinal, Freddy": "7004", "Ghoston, Jayden": "1688", "Guerrero, Solangue": "5529", "Hughbanks, Isaiah": "4000", "Jasmund, Wyatt": "8245", "Jordan, Ellyott": "2877", "Lomax, Brian": "8846", "Mays, McKenzie": "9101", "Minfield, Brian": "8559", "Ngom, Soulaymane": "9399", "O'Connor, William": "4682", "Roberson, Rihanna": "7265", "Rolon, Iyana": "6508", "Sanchez Guerrero, Pedro": "1249", "Schaefer, Alexis": "4656", "Shufford, Renardo": "2753", "Simmerer, Anthony": "5885", "Simmerer, Ryan": "2409", "Smitt, Isabella": "3742", "Watkins, J'Laraunt": "1317", "Wells, Dewayne": "4816"};
+const WEEKS=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const WK_TITLE={"0": "Tool Tour", "1": "Procreate Basics", "2": "Color Theory", "3": "Font Research", "4": "Typography", "5": "Layout", "6": "Illustration", "7": "Branding", "8": "Package Design", "9": "Business Card", "10": "Face Swap", "11": "Collage", "12": "Interior Design"};
+const CATS={"0": [], "1": ["Workspace navigation", "Nameplate design & personality", "Brush settings & color picker", "Layer use"], "2": ["Emotion or theme clarity", "Custom color palette", "Image import & composition", "Layer opacity adjustments"], "3": ["Font research completeness", "Quality of analysis", "Connection to poster", "Effort & completeness"], "4": ["Typography understanding", "Creativity of poster", "Use of Procreate text tools", "Effort & completion"], "5": ["Visual hierarchy", "Alignment & guide use", "Balance & negative space", "Layer grouping & selection tool"], "6": ["Illustrated scene", "Brush selection & customization", "Shading & highlights", "Color blending with smudge tool"], "7": ["4 brainstorm concepts", "Clean line work & shapes", "Color version & branding palette", "Black & white version"], "8": ["Required elements & product information", "Template use & panel orientation", "Design principles (Balance, Contrast, Hierarchy, Unity, Creativity)", "Craftsmanship & assembly"], "9": ["Required contact information", "Canvas size & layout", "Logo integration & branding", "Typography & readability"], "10": ["Face selection & cutout", "Scale & alignment", "Blending & unity", "Layer organization"], "11": ["Multiple images & textures imported", "Layer masks", "Blending modes", "Color harmony & unified composition"], "12": ["One-point perspective accuracy", "Furniture & interior details", "Texture rendering", "Craftsmanship & completeness"]};
+const REFL={"0": [], "1": ["What do you like most about your nameplate design?", "What was the most challenging part of learning Procreate this week?", "What would you change or add if you had more time?", "Did the demonstrations help you feel prepared? Explain."], "2": ["What emotion or theme did you choose and why?", "How did you decide which colors belonged in your palette?", "What would you change about your composition?", "Did this week change how you think about color? Explain."], "3": ["What font did you research and what made you choose it?", "What surprised you most about the history or design of this font?", "How does learning about a font's purpose change how you think about using it?", "Will you use this font in your typography poster? Why or why not?"], "4": ["What quote did you choose and why does it mean something to you?", "How did your font choices help communicate the mood or message of your quote?", "What was the hardest part about working with typography in Procreate?", "What would you change about your poster if you could redesign it?"], "5": ["What composition principle did you find most useful?", "Was creating balance in your poster difficult? What helped?", "What would you rearrange if you could start over?", "Did using guides and grids change your process? Explain."], "6": ["What scene did you illustrate and what inspired your choice?", "Which brush was your favorite and why?", "What part of your illustration are you most proud of?", "What would you practice more if you had extra time?"], "7": ["What fictional business is your logo for?", "How did you choose your final design from your 4 concepts?", "Does your logo still work in black and white?", "What makes a logo memorable \u2014 does yours meet that standard?"], "8": ["What product did you design packaging for and what inspired your concept?", "Which design principle (Balance, Contrast, Hierarchy, Unity, or Creativity) was hardest to apply to a 3D package? Why?", "What would you change about your package if you could redesign it?", "Did working on a physical template change how you think about digital design? Explain."], "9": ["What fictional business is this card for and what made-up contact info did you create?", "How did you decide what to put on the front vs. the back of your card?", "What was the biggest challenge about designing for such a small canvas?", "Does your business card feel consistent with the logo you made in Week 6? What connects them?"], "10": ["Who did you choose to swap and why?", "What was the hardest part of making the swap look realistic?", "What would you fix in your final composite?", "Which Procreate tool helped you most this week?"], "11": ["What theme ties your collage together?", "Which blending mode surprised you most \u2014 what effect did it create?", "What is your favorite element and why?", "What would you add or remove to strengthen the composition?"], "12": ["What type of room did you design and what inspired it?", "Was one-point perspective easy or difficult? What helped?", "Which texture was most satisfying to render?", "What would you add if you had more time?"]};
+const PREFIX="arttech_p6_2026";
+const LOCK_KEY=PREFIX+":teacher:locks";
+const ALL_WEEKS_TEACHER=[1,2,3,4,5,6,"6B",7,8,10];
+
+let all={};
+let lockState={};// {wnum: true=unlocked, false=locked}
+
+// ── Lock helpers ──────────────────────────────────────────────────────────
+async function loadLocks(){
+  try{
+    const r=await window.storage.get(LOCK_KEY,true);
+    if(r){lockState=JSON.parse(r.value);}
+    else{
+      // default: week 1 unlocked, rest locked
+      lockState={};
+      WEEKS.forEach((w,i)=>{lockState[w]=i===0;});
+    }
+  }catch(e){lockState={};WEEKS.forEach((w,i)=>{lockState[w]=i===0;});}
+}
+
+async function saveLocks(){
+  try{await window.storage.set(LOCK_KEY,JSON.stringify(lockState),true);}catch(e){}
+}
+
+async function toggleLock(w){
+  lockState[w]=!lockState[w];
+  await saveLocks();
+  renderLockGrid();
+  const openCount=WEEKS.filter(w=>lockState[w]).length;
+  const status=document.getElementById("lock-status");
+  status.innerHTML=`<span class="lock-saving">Saved — ${openCount} week${openCount===1?"":"s"} unlocked for students</span>`;
+  setTimeout(()=>{if(status)status.innerHTML=`${openCount} week${openCount===1?"":"s"} currently unlocked`;},2000);
+}
+
+function renderLockGrid(){
+  const grid=document.getElementById("lock-grid");
+  if(!grid)return;
+  grid.innerHTML=WEEKS.map(w=>{
+    const open=!!lockState[w];
+    const label=w==="6B"?"Wk 6B — Package Design":`Week ${w} — ${WK_TITLE[w]||""}`;
+    return `<button class="lock-btn ${open?"unlocked":"locked"}" onclick="toggleLock('${w}')">
+      <span class="dot"></span>${open?"🟢":"🔴"} ${label}
+    </button>`;
+  }).join("");
+  const openCount=WEEKS.filter(w=>lockState[w]).length;
+  const status=document.getElementById("lock-status");
+  if(status)status.textContent=`${openCount} week${openCount===1?"":"s"} currently unlocked`;
+}
+
+function skey(s,w,f){return PREFIX+":"+s+":w"+w+":"+f;}
+async function cget(s,w,f){try{const r=await window.storage.get(skey(s,w,f),true);return r?JSON.parse(r.value):null;}catch(e){return null;}}
+
+async function loadAll(){
+  const status=document.getElementById("load-status");
+  document.querySelector("#main-tbl tbody").innerHTML=`<tr><td colspan="12" class="loading">Fetching submissions…</td></tr>`;
+  await loadLocks();
+  renderLockGrid();
+  all={};let count=0;
+  for(const s of STUDENTS){
+    all[s]={};
+    for(const w of WEEKS){
+      const sub=await cget(s,w,"sub");const sc=await cget(s,w,"scores");
+      const refs=await cget(s,w,"refs");const qs=await cget(s,w,"quizstate");
+      const ups=await cget(s,w,"uploads");
+      all[s][w]={submitted:!!sub,scores:sc||{},refs:refs||[],quiz:qs,uploads:ups||[]};
+    }
+    count++;status.textContent=count+"/"+STUDENTS.length+" loaded";
+  }
+  status.textContent="";filter();
+}
+
+function scoreTotal(s,w){
+  const sc=all[s]?.[w]?.scores||{};
+  return(CATS[w]||[]).reduce((sum,c)=>{const v=sc[c];return sum+(v!=null?v:0);},0);
+}
+
+function filter(){
+  const wf=document.getElementById("wk-filter").value;
+  const sf=document.getElementById("st-filter").value;
+  const wks=wf==="all"?WEEKS:[wf==="6B"?"6B":isNaN(wf)?wf:parseInt(wf)];
+  renderStats(wks);renderTable(wks,sf);
+}
+
+function renderStats(wks){
+  let subs=0,possible=0,withAny=new Set(),withPhotos=new Set();
+  STUDENTS.forEach(s=>{wks.forEach(w=>{possible++;if(all[s]?.[w]?.submitted){subs++;withAny.add(s);if((all[s][w].uploads||[]).length>0)withPhotos.add(s+"_"+w);}});});
+  let total=0,cnt=0;
+  STUDENTS.forEach(s=>wks.forEach(w=>{if(all[s]?.[w]?.submitted){total+=scoreTotal(s,w);cnt++;}}));
+  document.getElementById("stats").innerHTML=`
+    <div class="stat"><div class="stat-lbl">Submissions</div><div class="stat-val">${subs} / ${possible}</div></div>
+    <div class="stat"><div class="stat-lbl">Active students</div><div class="stat-val">${withAny.size} / ${STUDENTS.length}</div></div>
+    <div class="stat"><div class="stat-lbl">Avg score</div><div class="stat-val">${cnt?Math.round(total/cnt*10)/10+"pts":"—"}</div></div>
+    <div class="stat"><div class="stat-lbl">With photos</div><div class="stat-val">${withPhotos.size}</div></div>`;
+}
+
+function renderTable(wks,sf){
+  const tbl=document.getElementById("main-tbl");
+  tbl.querySelector("thead").innerHTML=`<tr><th>Student</th>${wks.map(w=>`<th>Wk ${w==="6B"?"6B":w}<br><span style="font-weight:400">${(WK_TITLE[w]||"").substring(0,10)}</span></th>`).join("")}<th>Total</th><th>Photos</th></tr>`;
+  let rows=STUDENTS.filter(s=>{
+    if(sf==="done")return wks.some(w=>all[s]?.[w]?.submitted);
+    if(sf==="pend")return wks.every(w=>!all[s]?.[w]?.submitted);
+    return true;
+  });
+  if(!rows.length){tbl.querySelector("tbody").innerHTML=`<tr><td colspan="20" style="text-align:center;padding:2rem;color:#888780;font-size:13px">No students match this filter.</td></tr>`;return;}
+  tbl.querySelector("tbody").innerHTML=rows.map(s=>{
+    const subWks=wks.filter(w=>all[s]?.[w]?.submitted);
+    const total=subWks.reduce((sum,w)=>sum+scoreTotal(s,w),0);
+    const totalPhotos=wks.reduce((sum,w)=>sum+(all[s]?.[w]?.uploads?.length||0),0);
+    const parts=s.split(",");const last=parts[0];const first=(parts[1]||"").trim().split(" ")[0];
+    return `<tr>
+      <td style="font-weight:700;white-space:nowrap">${last}, ${first}</td>
+      ${wks.map(w=>{
+        if(!all[s]?.[w]?.submitted)return `<td><span class="chip chip-none">—</span></td>`;
+        const sc=scoreTotal(s,w),mx=(CATS[w]||[]).length*4;
+        const cls=sc>=mx*0.75?"chip-hi":sc>=mx*0.5?"chip-mid":"chip-lo";
+        return `<td><span class="chip ${cls}" onclick="showDetail('${s.replace(/'/g,"\\'")}',${JSON.stringify(w)})" title="Click for details">${sc}/${mx}</span></td>`;
+      }).join("")}
+      <td style="font-weight:700">${subWks.length?total+" / "+(subWks.length*(CATS[wks[0]]||[]).length*4||subWks.reduce((s,w)=>s+(CATS[w]||[]).length*4,0)):"—"}</td>
+      <td>${totalPhotos>0?`<span class="badge badge-done">${totalPhotos} 📸</span>`:`<span class="badge badge-pend">none</span>`}</td>
+    </tr>`;
+  }).join("");
+}
+
+function showDetail(s,w){
+  const d=all[s]?.[w];const area=document.getElementById("detail-area");
+  if(!d?.submitted){area.innerHTML="";return;}
+  const cats=CATS[w]||[];const qs=REFL[w]||[];
+  const total=scoreTotal(s,w);const parts=s.split(",");
+  const wLabel=w==="6B"?"6B":w;
+  const quizData=d.quiz;const quizScore=quizData&&quizData.bestScore!=null?quizData.bestScore:null;
+
+  const photoHTML=d.uploads&&d.uploads.length>0
+    ?`<div class="photo-grid">${d.uploads.map((img,i)=>`<div class="photo-item" onclick="openLightbox('${img.data}','${img.name}')"><img src="${img.data}" alt="${img.name}"><div class="photo-label">${img.name}</div></div>`).join("")}</div>`
+    :`<div class="no-photos">No photos uploaded yet.</div>`;
+
+  area.innerHTML=`<div class="detail-box">
+    <button class="close-btn" onclick="document.getElementById('detail-area').innerHTML=''">✕ Close</button>
+    <h3>${parts[0]}, ${(parts[1]||"").trim().split(" ")[0]} — Week ${wLabel}: ${WK_TITLE[w]||""}</h3>
+    <div class="score-row">
+      ${cats.map(c=>{const v=d.scores[c];const cls=v>=4?"chip-hi":v>=2?"chip-mid":v===0?"chip-lo":"chip-none";return `<div class="score-item"><span class="chip ${cls}" style="cursor:default">${v!=null?v:"?"}</span><span style="font-size:12px;color:#5F5E5A">${c}</span></div>`;}).join("")}
+    </div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:8px">Rubric total: ${total} / ${cats.length*4}</div>
+    <div style="font-size:12px;color:#5F5E5A;margin-bottom:16px">Vocab quiz best score: ${quizScore!=null?quizScore+" / "+(quizData.currentAnswers?Object.keys(quizData.currentAnswers).length:0):"not attempted"}</div>
+    <div class="sec-title">Reflections</div>
+    ${qs.map((q,i)=>`<div class="refl-item"><div class="refl-q">${i+1}. ${q}</div><div class="refl-a">${d.refs[i]||"<em style='color:#888780'>No response</em>"}</div></div>`).join("")}
+    <div class="sec-title" style="margin-top:1.25rem">Project Photos</div>
+    ${photoHTML}
+  </div>`;
+  area.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+function openLightbox(src,label){
+  document.getElementById("lb-img").src=src;
+  document.getElementById("lb-label").textContent=label;
+  document.getElementById("lightbox").classList.add("on");
+}
+function closeLightbox(){document.getElementById("lightbox").classList.remove("on");}
+
+loadAll();
+</script>
+</body>
+</html>
