@@ -197,6 +197,17 @@ textarea{width:100%;font-size:13px;border:1px solid #D3D1C7;border-radius:8px;pa
 .pin-key.wide{grid-column:span 1}
 .pin-err{color:#C0392B;font-size:13px;font-weight:700;margin-top:12px;min-height:18px}
 .pin-back{margin-top:14px;background:none;border:none;color:#8A4424;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline}
+
+.teacher-preview-link{display:block;margin:14px auto 0;background:none;border:none;color:#7F77DD;font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:underline}
+.teacher-preview-link:hover{color:#5B52C7}
+.preview-banner{background:#EDE9FB;border:1px solid #B7ADE8;color:#4A3F9E;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:8px;margin:10px 0;text-align:center}
+.preview-banner button{margin-left:10px;background:#6B5FD6;color:#fff;border:none;font-size:11px;font-weight:700;padding:4px 12px;border-radius:6px;cursor:pointer}
+
+.fb-row td{padding-top:0 !important;border-top:none !important}
+.fb-label{font-size:11px;font-weight:700;color:#7A756A;margin:2px 0 4px}
+.rub-fb{width:100%;box-sizing:border-box;font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid #D8D5CB;border-radius:6px;background:#FCFBF7;resize:vertical}
+.rub-fb:focus{outline:none;border-color:#8A82D8;background:#fff}
+.rub-fb[readonly]{background:#F3F1EC;color:#555}
 </style>
 </head>
 <body>
@@ -318,23 +329,24 @@ const GRID_PDF_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAE+wAAAzkCAIA
 
 const ALL_WEEKS=[0,1,2,3,4,5,6,7,8,9,10,11,12];
 
-let student=null,activeWk=null,scores={},quizState={},tabState={},submitted={},uploads={};
+let student=null,activeWk=null,scores={},quizState={},tabState={},submitted={},uploads={},rubfb={};
+let previewMode=false;
 let pendingStudent=null,pinEntry="";
 let lockState={};
 let saveTimer=null;
 
 function skey(s,w,f){return PREFIX+":"+s+":w"+w+":"+f;}
-async function cloudSave(s,w,f,val){try{await window.storage.set(skey(s,w,f),JSON.stringify(val),true);}catch(e){}}
+async function cloudSave(s,w,f,val){if(previewMode)return;if(previewMode)return;try{await window.storage.set(skey(s,w,f),JSON.stringify(val),true);}catch(e){}}
 async function cloudLoad(s,w,f){try{const r=await window.storage.get(skey(s,w,f),true);return r?JSON.parse(r.value):null;}catch(e){return null;}}
 function lsKey(s,w,f){return "at_"+btoa(encodeURIComponent(s))+"_w"+w+"_"+f;}
-function lsSave(s,w,f,v){try{localStorage.setItem(lsKey(s,w,f),JSON.stringify(v));}catch(e){}}
+function lsSave(s,w,f,v){if(previewMode)return;try{localStorage.setItem(lsKey(s,w,f),JSON.stringify(v));}catch(e){}}
 function lsLoad(s,w,f){try{const r=localStorage.getItem(lsKey(s,w,f));return r?JSON.parse(r):null;}catch(e){return null;}}
 
 async function loadLocks(){
   // TEACHER PREVIEW MODE — all weeks unlocked
   lockState={};ALL_WEEKS.forEach(w=>{lockState[w]=true;});
 }
-function isUnlocked(wnum){return !!lockState[wnum];}
+function isUnlocked(wnum){return previewMode?true:!!lockState[wnum];}
 
 function compressImage(file){
   return new Promise((resolve)=>{
@@ -357,9 +369,10 @@ function compressImage(file){
 }
 
 async function loadState(s){
-  scores={};submitted={};quizState={};uploads={};
+  scores={};submitted={};quizState={};uploads={};rubfb={};
   for(const w of weeks){
     const sc=lsLoad(s,w.num,"scores")||await cloudLoad(s,w.num,"scores");if(sc)scores[w.num]=sc;
+    const rfb=lsLoad(s,w.num,"rubfb")||await cloudLoad(s,w.num,"rubfb");if(rfb)rubfb[w.num]=rfb;
     const sub=lsLoad(s,w.num,"sub")||await cloudLoad(s,w.num,"sub");if(sub)submitted[w.num]=true;
     const qs=lsLoad(s,w.num,"quizstate")||await cloudLoad(s,w.num,"quizstate");
     quizState[w.num]=qs||{attempts:0,bestScore:0,currentAnswers:{},done:false};
@@ -387,11 +400,20 @@ function renderLogin(app){
     <p>John Glenn High School<br>Select your name to access your lessons, rubrics, quizzes, and project uploads.</p>
     <select id="ss"><option value="">— Choose your name —</option>${STUDENTS.map(s=>`<option value="${s}">${s}</option>`).join("")}</select>
     <button class="btn" id="lb" disabled onclick="goToPin()">Next →</button>
+    <button class="teacher-preview-link" onclick="startPreview()">👁️ Teacher preview</button>
   </div>`;
   document.getElementById("ss").onchange=e=>{document.getElementById("lb").disabled=!e.target.value;};
 }
 
 
+function startPreview(){
+  const code=prompt("Enter teacher code:");
+  if(code===null)return;
+  if(code!=="2424"){alert("Incorrect code.");return;}
+  previewMode=true;student="__PREVIEW__";pendingStudent=null;pinEntry="";
+  activeWk=null;render();
+}
+function exitPreview(){previewMode=false;student=null;activeWk=null;if(typeof stopLockRefresh==="function")stopLockRefresh();render();}
 function goToPin(){
   const v=document.getElementById("ss").value;if(!v)return;
   pendingStudent=v;pinEntry="";renderPinPad();
@@ -436,7 +458,8 @@ function renderMain(app){
   app.innerHTML=`
     <h1>🎨 Art Tech — 6th Hour</h1>
     <p class="sub">John Glenn High School</p>
-    <div class="sbar"><span>👤</span><span class="sname">${student}</span><span class="saving" id="saving-ind"></span><button class="btn-sm" onclick="student=null;activeWk=null;stopLockRefresh();render()">Switch</button></div>
+    <div class="sbar"><span>👤</span><span class="sname">${previewMode?"TEACHER PREVIEW":student}</span><span class="saving" id="saving-ind"></span><button class="btn-sm" onclick="student=null;activeWk=null;stopLockRefresh();render()">Switch</button></div>
+    ${previewMode?`<div class="preview-banner">👁️ TEACHER PREVIEW — all units unlocked, nothing is saved <button onclick="exitPreview()">Exit</button></div>`:""}
     <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(sub/weeks.length*100)}%"></div></div>
     <div class="progress-label">${sub} of ${weeks.length} weeks submitted</div>
     <div style="height:1.5rem"></div>
@@ -487,6 +510,14 @@ function setTab(n,t){
   document.querySelectorAll(".tc").forEach(c=>c.classList.toggle("on",c.dataset.t===t));
 }
 
+function saveRubFb(n,el){
+  n=Number(n);
+  if(previewMode)return;
+  if(!rubfb[n])rubfb[n]={};
+  rubfb[n][el.dataset.cat]=el.value;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{lsSave(student,n,"rubfb",rubfb[n]);cloudSave(student,n,"rubfb",rubfb[n]);showSaving("Saving…");},600);
+}
 function pickScore(n,cat,val){
   if(!scores[n])scores[n]={};scores[n][cat]=val;
   lsSave(student,n,"scores",scores[n]);cloudSave(student,n,"scores",scores[n]);showSaving("Saving…");
@@ -629,9 +660,9 @@ function refreshPreview(wnum){
 async function submitWk(n){
   const w=weeks.find(x=>x.num===n);
   const refs=w.reflections.map((_,i)=>{const el=document.getElementById("ref-"+n+"-"+i);return el?el.value:"";});
-  lsSave(student,n,"refs",refs);lsSave(student,n,"scores",scores[n]||{});lsSave(student,n,"sub",true);
+  lsSave(student,n,"refs",refs);lsSave(student,n,"scores",scores[n]||{});lsSave(student,n,"rubfb",rubfb[n]||{});lsSave(student,n,"sub",true);
   showSaving("Submitting…");
-  await cloudSave(student,n,"refs",refs);await cloudSave(student,n,"scores",scores[n]||{});
+  await cloudSave(student,n,"refs",refs);await cloudSave(student,n,"scores",scores[n]||{});await cloudSave(student,n,"rubfb",rubfb[n]||{});
   await cloudSave(student,n,"uploads",uploads[n]||[]);await cloudSave(student,n,"sub",true);
   showSaving("Submitted ✓");submitted[n]=true;renderGrid();renderDetail(w);
 }
@@ -868,7 +899,9 @@ function renderDetail(w){
   const rrows=w.rubric.map(r=>{
     const cur=s[r.cat];
     const b=(v)=>`<button class="sb${cur===v?" s"+v:""}" data-sc="${w.num}:${r.cat}" data-v="${v}" onclick="pickScore('${w.num}','${r.cat.replace(/'/g,"\\'")}',  ${v})"${done?" disabled":""}>${v}</button>`;
-    return `<tr><td><strong>${r.cat}</strong></td><td style="background:#EAF3DE22">${r.ex4}</td><td style="background:#FAEEDA22">${r.ex2}</td><td style="background:#FCEBEB22">${r.ex0}</td><td class="sc">${b(4)}${b(2)}${b(0)}</td></tr>`;
+    const fb=(rubfb[w.num]||{})[r.cat]||"";
+    return `<tr><td><strong>${r.cat}</strong></td><td style="background:#EAF3DE22">${r.ex4}</td><td style="background:#FAEEDA22">${r.ex2}</td><td style="background:#FCEBEB22">${r.ex0}</td><td class="sc">${b(4)}${b(2)}${b(0)}</td></tr>
+    <tr class="fb-row"><td colspan="5"><div class="fb-label">💬 Additional feedback (optional):</div><textarea class="rub-fb" data-cat="${r.cat.replace(/"/g,'&quot;')}" oninput="saveRubFb('${w.num}',this)" placeholder="Add any comments about this part…" rows="2"${done?" readonly":""}>${fb.replace(/</g,'&lt;')}</textarea></td></tr>`;
   }).join("");
 
   const savedRefs=w.reflections.map((_,i)=>lsLoad(student,w.num,"refs")?.[i]||"");
